@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,6 +25,12 @@ jobs:
       - name: Setup Project
         run: |
           npm run build
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy PHP to Server
         if: ${{ success() }}
         uses: appleboy/ssh-action@master
@@ -34,17 +41,18 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
-            cd staging
-            git pull
+            if [ ! -d "staging/.git" ]; then
+              git init staging
+              cd staging
+              git remote add origin git@github.com:RizkySix/weddding-ta.git
+              git fetch
+              git checkout -t origin/staging
+            else
+              cd staging
+              git pull origin staging
+            fi
             composer install
             php artisan migrate
-
-      - name: Install SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
       - name: Copy Build Files to Target Server
         run: |
           rsync -r -e "ssh -p ${{ secrets.SSH_PORT }}" ${{ github.workspace }}/public/build/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/staging/public/build
