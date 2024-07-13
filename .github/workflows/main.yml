@@ -49,4 +49,4 @@ jobs:
         run: |
           rsync -r -e "ssh -p ${{ secrets.SSH_PORT }}" ${{ github.workspace }}/public/build/ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/staging/public/build
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
-          "rsync -r --exclude='index.php' --exclude='storage/' ~/staging/public/ ~/dev.balisuntours.com/"
+          "rsync -r --exclude='index.php' --exclude='storage/' ~/staging/public/ ~/staging.mastersilverclass.com/"
